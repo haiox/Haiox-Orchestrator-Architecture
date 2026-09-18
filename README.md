@@ -1,91 +1,124 @@
 # AGInaz Orchestrator — Architecture
 
-Public architecture notes for an evidence-aware, provider-independent multi-agent system.
+Public architecture notes for a governed, evidence-aware, provider-independent multi-agent orchestration system.
 
-> This repository explains the design. The implementation, prompts, and internal policies remain private.
+> This repository documents the architecture and engineering decisions. The implementation remains private.
 
-## The idea in one minute
+**Architecture version: 1.1**
 
-Most multi-agent demos let models talk freely and hope they reach a good answer. AGInaz uses a controlled workflow instead:
+## Why this project exists
 
-1. Specialist agents solve the same task independently.
-2. Reviewer agents check claims, assumptions, and contradictions.
-3. The orchestrator combines the useful parts, explains conflicts, and keeps uncertainty visible.
-4. The UI receives clean system events—not raw provider responses.
+Multi-agent demos are easy to assemble; reliable multi-agent workflows are harder. Letting agents talk freely can amplify anchoring, premature consensus, duplicated work, and hidden disagreement.
 
-This makes the workflow easier to inspect, test, extend, and move between model providers.
+AGInaz Orchestrator treats agent execution as a governed workflow with explicit state, isolated workers, structured evidence, normalized events, and conflict-aware synthesis. The application—not an individual model—controls who can see what, when a phase may advance, and how competing findings reach the final synthesis.
 
-## High-level architecture
+The goal is to make the system observable, testable, and replaceable at every boundary instead of coupling the product to one model provider or an uncontrolled conversation loop.
+
+## Product direction
+
+AGInaz Orchestrator is evolving toward a governed multi-agent brainstorming workspace: a SaaS environment where a project owner can configure the high-level interaction policy for a run without surrendering workflow control to the participating models.
+
+The intended experience separates two responsibilities:
+
+- **Project Manager:** captures the objective, constraints, participants, review stages, and high-level visibility rules.
+- **Orchestrator:** enforces the resulting execution policy across isolated workers, evidence review, and controlled synthesis.
+
+This direction is not another free-form agent group chat. It is a control plane for structured deliberation.
+
+## System overview
 
 ```mermaid
 flowchart TB
-    UI[Streamlit UI] <-->|HTTP + SSE| API[FastAPI]
-    API --> M[Agent Manager]
-    M --> A[Architect Agent]
-    M --> B[Implementation Agent]
-    M --> C[Risk Agent]
-    A --> E[Evidence Cross-check]
-    B --> E
+    PM[Project Policy]
+    UI[Streamlit Event Consumer]
+    API[FastAPI Transport Layer]
+    MGR[Agent Manager]
+    BUS[Normalized Event Stream]
+    A[Architect Worker]
+    C[Implementation Worker]
+    R[Risk Reviewer]
+    E[Evidence Cross-check]
+    S[Conflict-aware Synthesis]
+
+    PM --> API
+    UI <-->|HTTP + SSE| API
+    API --> MGR
+    MGR --> A
+    MGR --> C
+    MGR --> R
+    A --> E
     C --> E
-    E --> S[Conflict-aware Synthesis]
-    M --> V[Normalized Event Stream]
-    V --> API
+    R --> E
+    E --> S
+    MGR --> BUS
+    BUS --> API
 ```
 
-## Execution flow
+## Execution model
 
 ```mermaid
 stateDiagram-v2
     [*] --> Idle
-    Idle --> IndependentWork
-    IndependentWork --> EvidenceReview
-    EvidenceReview --> FinalSynthesis
-    FinalSynthesis --> Completed
-    IndependentWork --> Failed
-    EvidenceReview --> Failed
-    FinalSynthesis --> Failed
-    IndependentWork --> Cancelled
+    Idle --> BlindBrainstorming
+    BlindBrainstorming --> EvidenceCrosscheck
+    EvidenceCrosscheck --> OrchestratorSynthesis
+    OrchestratorSynthesis --> Completed
+    BlindBrainstorming --> Failed
+    EvidenceCrosscheck --> Failed
+    OrchestratorSynthesis --> Failed
+    BlindBrainstorming --> Cancelled
+    EvidenceCrosscheck --> Cancelled
 ```
 
-## Core design choices
+1. **Blind brainstorming** — specialized workers receive the same task independently to reduce anchoring and dominant-agent bias.
+2. **Evidence cross-check** — reviewers inspect claims, assumptions, contradictions, and technical consistency.
+3. **Orchestrator synthesis** — the final model receives the task, independent outputs, evidence records, and detected conflicts.
+4. **Completion** — the backend emits a terminal event and closes the stream.
 
-- **Independent first pass:** agents do not see each other’s answers at the start, reducing anchoring and groupthink.
-- **Evidence before confidence:** a conclusion is not accepted simply because a model sounds certain.
-- **Conflict-aware synthesis:** disagreements are reviewed and surfaced instead of silently averaged away.
-- **Provider independence:** every model sits behind the same worker boundary.
-- **Application-controlled orchestration:** models reason; AGInaz controls the workflow.
-- **Normalized events:** the frontend reads one stable event format regardless of provider.
+The interaction model is described in [INTERACTION_MODEL.md](INTERACTION_MODEL.md).
 
-## Architecture layers
+## Core engineering decisions
 
-| Layer | Responsibility |
-|---|---|
-| Streamlit UI | Displays normalized run events |
-| FastAPI | Starts, inspects, streams, and cancels runs |
-| Agent Manager | Controls state, concurrency, and sequencing |
-| Workers | Adapt different model providers to one contract |
-| Evidence Review | Marks support, contradiction, and uncertainty |
-| Synthesis | Produces the final answer with risks and unresolved questions |
+- **Provider independence:** model-specific responses are normalized behind a common worker contract.
+- **Strict agent isolation:** workers do not see one another's output during the first phase.
+- **Evidence as data:** support, contradiction, uncertainty, confidence, and references are represented as structured records.
+- **Orchestrator neutrality:** the application owns execution policy; no model provider becomes the control plane.
+- **Explicit state:** every run has deterministic phases and terminal failure/cancellation paths.
+- **Event-driven UI:** the frontend consumes application events, never raw provider responses.
+- **Governed visibility:** information is disclosed according to phase boundaries rather than through unrestricted agent-to-agent chat.
+- **Controlled disagreement:** conflicting findings remain visible until a designated synthesis phase resolves or preserves them.
 
 ## Current private prototype
 
-The private MVP includes async execution, isolated specialist agents, structured evidence review, conflict-aware synthesis, FastAPI transport, Server-Sent Events, a Streamlit event consumer, and provider-independent workers.
+The private MVP includes asynchronous agent management, concurrent isolated workers, provider-independent worker abstraction, structured evidence cross-checking, conflict-aware synthesis, normalized events over Server-Sent Events, FastAPI transport, and a Streamlit event consumer.
 
-It is currently a single-instance portfolio prototype. Persistent storage, shared event infrastructure, authentication, observability, cost controls, retries, provider fallback, automated tests, and container deployment are on the roadmap.
+It is currently a single-instance portfolio prototype—not a claim of horizontally scalable production readiness.
 
 ## Public/private boundary
 
-This public repository intentionally contains no source code, prompts, credentials, production endpoints, private evaluation data, or proprietary routing and scoring logic.
+This repository intentionally excludes source code, internal prompts, credentials, exact policy schemas, reveal rules, evaluation heuristics, routing and scoring logic, private evaluation data, and production configuration.
+
+## Roadmap
+
+- persistent run storage and distributed event transport;
+- authentication, authorization, observability, and audit trails;
+- configurable interaction policies and governed multi-round deliberation;
+- execution leases, checkpoint-aware recovery, and bounded retry budgets;
+- Project Manager workspace and reusable workflow templates;
+- automated evaluation, integration tests, and containerized deployment;
+- multi-tenant SaaS foundations, including tenancy, billing boundaries, and policy isolation.
 
 ## Related AGInaz projects
 
-- [Smart Miner](https://github.com/Hatef-AGInaz/AGInaz_Smart_Miner) — collects and validates structured web data.
-- [DePIN Research Agent](https://github.com/Hatef-AGInaz/AGInaz_DePIN_Research_Agent) — analyzes claims, tokenomics, and risk with evidence.
-- [MultiAgent](https://github.com/Hatef-AGInaz/AGInaz_MultiAgent) — coordinates multiple models with retrieval capabilities.
+- [AGInaz Smart Miner](https://github.com/Hatef-AGInaz/AGInaz_Smart_Miner) — validated web extraction for structured inputs.
+- [AGInaz DePIN Research Agent](https://github.com/Hatef-AGInaz/AGInaz_DePIN_Research_Agent) — evidence-first research and risk analysis.
+- [AGInaz MultiAgent](https://github.com/Hatef-AGInaz/AGInaz_MultiAgent) — multi-model coordination with retrieval capabilities.
 
-Together they tell one story: collect reliable inputs, analyze and verify them, coordinate specialists, and control execution through an observable orchestration layer.
+## Status
+
+Architecture showcase — active development. Version 1.1 documents the governed-interaction direction while the implementation remains private.
 
 ## Contact
 
 - GitHub: [Hatef-AGInaz](https://github.com/Hatef-AGInaz)
-- X: [@aginaz_ai](https://x.com/aginaz_ai)
+- X: [@aginaz_](https://x.com/aginaz_)
