@@ -1,4 +1,6 @@
-# AGInaz Orchestrator — Architecture
+# Haiox Orchestrator — Architecture
+
+Previously published as **AGInaz Orchestrator**; older GitHub links redirect here.
 
 Public architecture notes for a governed, evidence-aware, provider-independent multi-agent orchestration system.
 
@@ -10,13 +12,13 @@ Public architecture notes for a governed, evidence-aware, provider-independent m
 
 Multi-agent demos are easy to assemble; reliable multi-agent workflows are harder. Letting agents talk freely can amplify anchoring, premature consensus, duplicated work, and hidden disagreement.
 
-AGInaz Orchestrator treats agent execution as a governed workflow with explicit state, isolated workers, structured evidence, normalized events, and conflict-aware synthesis. The application—not an individual model—controls who can see what, when a phase may advance, and how competing findings reach the final synthesis.
+Haiox Orchestrator treats agent execution as a governed workflow with explicit state, isolated workers, structured evidence, normalized events, and conflict-aware synthesis. The application—not an individual model—controls who can see what, when a phase may advance, and how competing findings reach the final synthesis.
 
 The goal is to make the system observable, testable, and replaceable at every boundary instead of coupling the product to one model provider or an uncontrolled conversation loop.
 
 ## Product direction
 
-AGInaz Orchestrator is evolving toward a governed multi-agent brainstorming workspace: a SaaS environment where a project owner can configure the high-level interaction policy for a run without surrendering workflow control to the participating models.
+Haiox Orchestrator is evolving toward a governed multi-agent brainstorming workspace: a SaaS environment where a project owner can configure the high-level interaction policy for a run without surrendering workflow control to the participating models.
 
 The intended experience separates two responsibilities:
 
@@ -108,11 +110,11 @@ This repository intentionally excludes source code, internal prompts, credential
 - automated evaluation, integration tests, and containerized deployment;
 - multi-tenant SaaS foundations, including tenancy, billing boundaries, and policy isolation.
 
-## Related AGInaz projects
+## Related Haiox projects
 
-- [AGInaz Smart Miner](https://github.com/Hatef-AGInaz/AGInaz_Smart_Miner) — validated web extraction for structured inputs.
-- [AGInaz DePIN Research Agent](https://github.com/Hatef-AGInaz/AGInaz_DePIN_Research_Agent) — evidence-first research and risk analysis.
-- [AGInaz MultiAgent](https://github.com/Hatef-AGInaz/AGInaz_MultiAgent) — multi-model coordination with retrieval capabilities.
+- [Haiox Smart Miner](https://github.com/haiox/Haiox_Smart_Miner) — validated web extraction for structured inputs.
+- [Haiox DePIN Research Agent](https://github.com/haiox/Haiox_DePIN_Research_Agent) — evidence-first research and risk analysis.
+- [Haiox MultiAgent](https://github.com/haiox/Haiox_MultiAgent) — multi-model coordination with retrieval capabilities.
 
 ## Status
 
@@ -120,5 +122,5 @@ Architecture showcase — active development. Version 1.1 documents the governed
 
 ## Contact
 
-- GitHub: [Hatef-AGInaz](https://github.com/Hatef-AGInaz)
+- GitHub: [Haiox](https://github.com/haiox)
 - X: [@aginaz_](https://x.com/aginaz_)
