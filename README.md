@@ -63,21 +63,33 @@ stateDiagram-v2
     [*] --> Idle
     Idle --> BlindBrainstorming
     BlindBrainstorming --> EvidenceCrosscheck
-    EvidenceCrosscheck --> OrchestratorSynthesis
+    EvidenceCrosscheck --> OrchestratorSynthesis: proceed with reviewed findings
+    EvidenceCrosscheck --> ControlledRevision: planned optional R2
+    ControlledRevision --> EvidenceCrosscheck: review revised claims
     OrchestratorSynthesis --> Completed
+    Idle --> Cancelled
     BlindBrainstorming --> Failed
     EvidenceCrosscheck --> Failed
+    ControlledRevision --> Failed
     OrchestratorSynthesis --> Failed
     BlindBrainstorming --> Cancelled
     EvidenceCrosscheck --> Cancelled
+    ControlledRevision --> Cancelled
+    OrchestratorSynthesis --> Cancelled
+    Completed --> [*]
+    Failed --> [*]
+    Cancelled --> [*]
 ```
 
 1. **Blind brainstorming** — specialized workers receive the same task independently to reduce anchoring and dominant-agent bias.
 2. **Evidence cross-check** — reviewers inspect claims, assumptions, contradictions, and technical consistency.
 3. **Orchestrator synthesis** — the final model receives the task, independent outputs, evidence records, and detected conflicts.
-4. **Completion** — the backend emits a terminal event and closes the stream.
 
-The interaction model is described in [INTERACTION_MODEL.md](INTERACTION_MODEL.md).
+**Completion is a terminal outcome, not a fourth interaction phase.** The baseline has three phases: blind brainstorming, evidence cross-check, and orchestrator synthesis.
+
+**Controlled revision (R2) is a planned optional extension.** The diagram shows its architectural place; it is not a statement that configurable multi-round execution is implemented in the current private prototype. When a project policy enables revision, selected review findings may return to workers within a bounded revision budget. Revised claims return to evidence cross-check before synthesis. Without R2, the reviewed findings proceed directly to synthesis, preserving unresolved uncertainty.
+
+The diagram describes the intended application state contract, including cancellation during synthesis. Completion, failure, and cancellation each end a run with one terminal outcome; partial outputs remain distinguishable from a completed result. The cancellation semantics, conceptual evidence contract, and planned R2 transition rules are described in [INTERACTION_MODEL.md](INTERACTION_MODEL.md).
 
 ## Core engineering decisions
 
@@ -89,6 +101,15 @@ The interaction model is described in [INTERACTION_MODEL.md](INTERACTION_MODEL.m
 - **Event-driven UI:** the frontend consumes application events, never raw provider responses.
 - **Governed visibility:** information is disclosed according to phase boundaries rather than through unrestricted agent-to-agent chat.
 - **Controlled disagreement:** conflicting findings remain visible until a designated synthesis phase resolves or preserves them.
+
+## Capability status
+
+| Scope | Status in these public notes |
+| --- | --- |
+| Baseline three-phase workflow and transport | Described as part of the current private prototype; no public implementation or evaluation is supplied. |
+| Configurable R2 and multi-round policies | Planned architectural extension. |
+| Project Manager workspace, multi-tenant SaaS, and reliability hardening | Roadmap direction. |
+| Evidence and terminal-state contracts | Public architectural semantics; not executable schemas or proof of implementation. |
 
 ## Current private prototype
 
@@ -114,7 +135,7 @@ This repository intentionally excludes source code, internal prompts, credential
 
 - [Haiox Smart Miner](https://github.com/haiox/Haiox_Smart_Miner) — validated web extraction for structured inputs.
 - [Haiox DePIN Research Agent](https://github.com/haiox/Haiox_DePIN_Research_Agent) — evidence-first research and risk analysis.
-- [Haiox MultiAgent](https://github.com/haiox/Haiox_MultiAgent) — multi-model coordination with retrieval capabilities.
+- [Haiox MultiAgent](https://github.com/haiox/Haiox_MultiAgent) — multi-model coordination with local knowledge context.
 
 ## Status
 
